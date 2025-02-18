@@ -1,0 +1,115 @@
+﻿@page "/students"
+@inject HttpClient Http
+
+<PageTitle>Students</PageTitle>
+
+<h2>Search Students by School</h2>
+<div>
+    <input type="text" @bind="schoolName" placeholder="Enter school name" />
+    <button @onclick="FetchStudentsBySchool">Search</button>
+</div>
+
+@if (searchedStudents != null) {
+    <h3>Students in @schoolName</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>School</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var student in searchedStudents)
+            {
+                <tr>
+                    <td>@student.StudentId</td>
+                    <td>@student.FirstName @student.LastName</td>
+                    <td>@student.School</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<h2>Student Count by School</h2>
+@if (schoolCounts == null) {
+    <p><em>Loading...</em></p>
+} else {
+    <table class="table">
+        <thead>
+            <tr>
+                <th>School</th>
+                <th>Student Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in schoolCounts)
+            {
+                <tr>
+                    <td>@item.School</td>
+                    <td>@item.Count</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<h2>All Students</h2>
+
+@if (students == null) {
+    <p><em>Loading...</em></p>
+} else {
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>School</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in students)
+            {
+                <tr>
+                    <td>@item.StudentId</td>
+                    <td>@item.FirstName @item.LastName</td>
+                    <td>@item.School</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Student[]? students;
+    private Student[]? searchedStudents;
+    private string? schoolName;
+    private SchoolCount[]? schoolCounts;
+
+    protected override async Task OnInitializedAsync() {
+        // Fetch the list of students
+        students = await Http.GetFromJsonAsync<Student[]>("/api/students");
+
+        // Fetch the student count by school
+        schoolCounts = await Http.GetFromJsonAsync<SchoolCount[]>("/api/students/count-by-school");
+    }
+
+    private async Task FetchStudentsBySchool() {
+        if (!string.IsNullOrEmpty(schoolName)) {
+            searchedStudents = await Http.GetFromJsonAsync<Student[]>($"/api/students/school/{schoolName}");
+        }
+    }
+
+    public partial class Student {
+        public int StudentId { get; set; }
+        public string? LastName { get; set; }
+        public string? FirstName { get; set; }
+        public string? School { get; set; }
+    }
+
+    public class SchoolCount {
+        public string School { get; set; }
+        public int Count { get; set; }
+    }
+}
